@@ -16,7 +16,15 @@ s.listen(1)
 conn,addr = s.accept()
 print(addr," has connected to the server and is now online...\n")
 
-
+while 1:
+    incoming_message=conn.recv(1024)
+    incoming_message=incoming_message.decode()
+    print("Client :",incoming_message)
+    print("")
+    message=input("")
+    message=message.encode()
+    conn.send(message)
+    print("")           
    
  
 
