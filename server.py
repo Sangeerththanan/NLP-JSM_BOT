@@ -67,7 +67,7 @@ def textPreprocessing(question):
     words = cleaned_text.split()
 
     # Handle greeting phrases
-    greetings = ["hi", "hello", "gm", "good morning", "gn", "good night"]
+    greetings = ["hi", "hello", "gm", "good morning", "gn", "good night","good afternoon","ga","good evening","gd eve"]
     if any(word in words for word in greetings):
         return "Hello! How can I assist you today?"
 
