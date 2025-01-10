@@ -1,5 +1,6 @@
 import socket
 import re
+from difflib import get_close_matches
 
 # Initialize socket
 s = socket.socket()
@@ -10,7 +11,7 @@ port = 8080
 s.bind((host, port))
 
 print("\nServer done binding to host and port successfully!\n")
-print("\nServer is waiting for numbers\n")
+print("\nServer is waiting for queries...\n")
 
 s.listen(1)
 
@@ -56,68 +57,73 @@ food_data = {
     }
 }
 
-# Initialize a variable to store the last queried specific food
-last_queried_food = None
-
 def textPreprocessing(question):
-    global last_queried_food  # Use the global context variable
-
     # Convert to lowercase and remove punctuation
     cleaned_text = re.sub(r'[^\w\s]', '', question.lower())
     words = cleaned_text.split()
 
     # Handle greeting phrases
-    greetings = ["hi", "hello", "gm", "good morning", "gn", "good night"]
+    greetings = ["hi", "hello", "gm", "good morning", "gn", "good night", "good afternoon", "ga"]
     if any(word in words for word in greetings):
         return "Hello! How can I assist you today?"
 
+    # Handle identity-related questions
+    if any(phrase in question.lower() for phrase in ["who are you", "what is your name", "who is this"]):
+        return "I'm JSM, your friendly server assistant. How can I help you today?"
+
+    # Check for delivery inquiries
+    if any(phrase in question.lower() for phrase in ["online delivery", "door delivery", "home delivery"]):
+        return (
+            "We do not offer door delivery directly. "
+            "You can pick up your order at our location. "
+            "Alternatively, you may use services like XEAT or Uber Eats for door delivery."
+        )
+
+    # Check for specific quantities and calculate total price
+    quantity_match = re.search(r"(\d+)\s+(\w+)", question)
+    if quantity_match:
+        quantity = int(quantity_match.group(1))
+        item = quantity_match.group(2)
+        if item in food_data and food_data[item]["availability"]:
+            total_price = quantity * food_data[item]["price"]
+            return f"The total amount for {quantity} {item}(s) is ${total_price:.2f}. You can pick it up at our store."
+        return f"Sorry, {item} is not available or not recognized."
+
     # Check for general inquiries about the menu or available foods
-    if any(word in words for word in ["food", "foods", "menu", "items", "have"]):
+    if any(word in words for word in ["menu", "items", "available", "food"]):
         available_foods = [item for item, details in food_data.items() if details["availability"]]
-        last_queried_food = None  # Reset context
         return f"We have the following available: {', '.join(available_foods)}."
 
-    # Check for general price inquiry
-    if "price" in words or "prices" in words:
-        if last_queried_food:  # If a specific food was queried earlier
-            food_item = food_data.get(last_queried_food)
-            if food_item:
-                return f"The price of {last_queried_food} is ${food_item['price']:.2f}."
-        else:  # General price inquiry
-            prices = [f"{item.capitalize()}: ${details['price']:.2f}" 
-                      for item, details in food_data.items()]
-            return "Here are the prices of all items:\n" + "\n".join(prices)
-
-    # Check for specific food items
+    # Check for food item details
     for word in words:
         if word in food_data:
-            last_queried_food = word  # Update context to the specific food
             food_item = food_data[word]
             if "price" in words:
                 return f"The price of {word} is ${food_item['price']:.2f}."
-            elif any(phrase in question for phrase in ["can i", "is it possible", "can we", "take now", "buy now", "eat now", "cn i", "i can take"]):
+            elif any(phrase in question for phrase in ["can i", "is it available", "buy now"]):
                 if food_item["availability"]:
                     return f"Yes, {word} is available now! You can enjoy it."
                 else:
-                    return f"Sorry, {word} is currently not available."
-            else:
-                return f"{word.capitalize()} - Price: ${food_item['price']:.2f}. Description: {food_item['description']}"
+                    return f"Sorry, {word} is currently not available. Would you like to try something else?"
 
-    # Check for generic availability queries
-    if any(phrase in question for phrase in ["can i", "is it available", "can we", "take now", "buy now", "eat now", "cn i", "i can take"]):
-        if last_queried_food:
-            food_item = food_data.get(last_queried_food)
-            if food_item:
-                if food_item["availability"]:
-                    return f"Yes, {last_queried_food} is available now! You can enjoy it."
-                else:
-                    return f"Sorry, {last_queried_food} is currently not available."
+            return f"{word.capitalize()} - Price: ${food_item['price']:.2f}. Description: {food_item['description']}"
+
+    # Suggest close matches for unrecognized items
+    unrecognized_foods = [word for word in words if word not in food_data]
+    if unrecognized_foods:
+        suggestions = []
+        for word in unrecognized_foods:
+            close_matches = get_close_matches(word, food_data.keys(), n=3, cutoff=0.5)
+            if close_matches:
+                suggestions.append(f"Did you mean {', '.join(close_matches)}?")
+        if suggestions:
+            return "I couldn't find the item in our menu. " + " ".join(suggestions)
         else:
-            return "Please specify the food item you'd like to check availability for."
+            available_foods = [item for item, details in food_data.items() if details["availability"]]
+            return f"I couldn't find the item in our menu. Here's what we have available: {', '.join(available_foods)}."
 
     # Default response
     return "I'm sorry, I couldn't understand your question. Please ask about the menu, specific food items, or their prices and availability."
-
 
 # Chat Loop
 while True:
