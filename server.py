@@ -63,7 +63,11 @@ def textPreprocessing(question):
     words = cleaned_text.split()
 
     # Handle greeting phrases
+<<<<<<< HEAD
     greetings = ["hi", "hello", "gm", "good morning", "gn", "good night", "good afternoon", "ga"]
+=======
+    greetings = ["hi", "hello", "gm", "good morning", "gn", "good night","good afternoon","ga","good evening","gd eve"]
+>>>>>>> 0e01e175922790c45286f69f53662cf3e83f94e9
     if any(word in words for word in greetings):
         return "Hello! How can I assist you today?"
 
@@ -90,7 +94,11 @@ def textPreprocessing(question):
         return f"Sorry, {item} is not available or not recognized."
 
     # Check for general inquiries about the menu or available foods
+<<<<<<< HEAD
     if any(word in words for word in ["menu", "items", "available", "food"]):
+=======
+    if any(word in words for word in ["food", "foods", "menu", "items", "have","meals"]):
+>>>>>>> 0e01e175922790c45286f69f53662cf3e83f94e9
         available_foods = [item for item, details in food_data.items() if details["availability"]]
         return f"We have the following available: {', '.join(available_foods)}."
 
