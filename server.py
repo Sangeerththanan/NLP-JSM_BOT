@@ -72,7 +72,7 @@ def textPreprocessing(question):
         return "Hello! How can I assist you today?"
 
     # Check for general inquiries about the menu or available foods
-    if any(word in words for word in ["food", "foods", "menu", "items", "have"]):
+    if any(word in words for word in ["food", "foods", "menu", "items", "have","meals"]):
         available_foods = [item for item, details in food_data.items() if details["availability"]]
         last_queried_food = None  # Reset context
         return f"We have the following available: {', '.join(available_foods)}."
